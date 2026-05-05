@@ -1,0 +1,10 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: AstraAlgebra
+Description: 高性能3D数学库，游戏引擎和图形应用用的
+Version: @PROJECT_VERSION@
+Libs: -L${libdir} -lAstraAlgebra
+Cflags: -I${includedir}

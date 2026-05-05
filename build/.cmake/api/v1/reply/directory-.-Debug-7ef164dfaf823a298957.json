@@ -1,0 +1,160 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 191,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 200,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 206,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 224,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 241,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 298,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"libAstraAlgebra.a"
+			],
+			"targetId" : "AstraAlgebra::@6890427a1f51a3e7e1df",
+			"targetIndex" : 0,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "include",
+			"paths" : 
+			[
+				"include/AstraAlgebra"
+			],
+			"type" : "directory"
+		},
+		{
+			"backtrace" : 3,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/AstraAlgebra",
+			"exportName" : "AstraAlgebraTargets",
+			"exportTargets" : 
+			[
+				{
+					"id" : "AstraAlgebra::@6890427a1f51a3e7e1df",
+					"index" : 0
+				}
+			],
+			"paths" : 
+			[
+				"CMakeFiles/Export/c380d3045a68b49e489664a931cc2386/AstraAlgebraTargets.cmake"
+			],
+			"type" : "export"
+		},
+		{
+			"backtrace" : 4,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/AstraAlgebra",
+			"paths" : 
+			[
+				"build/AstraAlgebraConfig.cmake",
+				"build/AstraAlgebraConfigVersion.cmake"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 5,
+			"component" : "Unspecified",
+			"destination" : "lib/pkgconfig",
+			"paths" : 
+			[
+				"build/AstraAlgebra.pc"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 6,
+			"component" : "Unspecified",
+			"destination" : "include/AstraAlgebra",
+			"paths" : 
+			[
+				"include/AstraAlgebra/AstraAlgebra.h",
+				"include/AstraAlgebra/Core/MathUtils.h",
+				"include/AstraAlgebra/Core/GPU.h",
+				"include/AstraAlgebra/Core/Serialization.h",
+				"include/AstraAlgebra/Core/Transform.h",
+				"include/AstraAlgebra/Vector/Vector2.h",
+				"include/AstraAlgebra/Vector/Vector3.h",
+				"include/AstraAlgebra/Vector/Vector4.h",
+				"include/AstraAlgebra/Vector/Vector3d.h",
+				"include/AstraAlgebra/Matrix/Matrix2x2.h",
+				"include/AstraAlgebra/Matrix/Matrix3x3.h",
+				"include/AstraAlgebra/Matrix/Matrix4x4.h",
+				"include/AstraAlgebra/Matrix/Matrix4x4d.h",
+				"include/AstraAlgebra/Quaternion/Quaternion.h",
+				"include/AstraAlgebra/Geometry/Ray.h",
+				"include/AstraAlgebra/Geometry/Plane.h",
+				"include/AstraAlgebra/Geometry/Sphere.h",
+				"include/AstraAlgebra/Geometry/Bounds.h",
+				"include/AstraAlgebra/Geometry/Triangle.h",
+				"include/AstraAlgebra/Geometry/Noise.h",
+				"include/AstraAlgebra/Geometry/Cylinder.h",
+				"include/AstraAlgebra/Geometry/Cone.h",
+				"include/AstraAlgebra/Geometry/Capsule.h",
+				"include/AstraAlgebra/Geometry/Line.h",
+				"include/AstraAlgebra/Numerics/MatrixDecomposition.h",
+				"include/AstraAlgebra/Numerics/ColorSpace.h",
+				"include/AstraAlgebra/Numerics/Random.h"
+			],
+			"type" : "file"
+		}
+	],
+	"paths" : 
+	{
+		"build" : ".",
+		"source" : "."
+	}
+}
