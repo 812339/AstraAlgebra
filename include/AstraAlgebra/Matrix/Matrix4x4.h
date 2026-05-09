@@ -236,7 +236,32 @@ public:
     static Matrix4x4 rotation(const Vector3& axis, float angle, bool isDegrees = false);
     static Matrix4x4 rotation(const Vector3& eulerAngles, bool isDegrees = false);
     // 相机相关
-    static Matrix4x4 lookAt(const Vector3& eye, const Vector3& target, const Vector3& up);
+    static inline Matrix4x4 lookAt(const Vector3& eye, const Vector3& target, const Vector3& up) {
+        float fx = target.x - eye.x;
+        float fy = target.y - eye.y;
+        float fz = target.z - eye.z;
+        float fLen2 = fx * fx + fy * fy + fz * fz;
+        float fInvLen = Math::fastInvSqrt(fLen2);
+        fx *= fInvLen; fy *= fInvLen; fz *= fInvLen;
+        
+        float rx = fy * up.z - fz * up.y;
+        float ry = fz * up.x - fx * up.z;
+        float rz = fx * up.y - fy * up.x;
+        float rLen2 = rx * rx + ry * ry + rz * rz;
+        float rInvLen = Math::fastInvSqrt(rLen2);
+        rx *= rInvLen; ry *= rInvLen; rz *= rInvLen;
+        
+        float ux = ry * fz - rz * fy;
+        float uy = rz * fx - rx * fz;
+        float uz = rx * fy - ry * fx;
+        
+        return Matrix4x4(
+            rx, ry, rz, -(rx * eye.x + ry * eye.y + rz * eye.z),
+            ux, uy, uz, -(ux * eye.x + uy * eye.y + uz * eye.z),
+            -fx, -fy, -fz, fx * eye.x + fy * eye.y + fz * eye.z,
+            0.0f, 0.0f, 0.0f, 1.0f
+        );
+    }
     // 透视投影
     static inline Matrix4x4 perspective(float fov, float aspectRatio, float nearPlane, float farPlane) {
         float fovRad = fov * Math::DEG_TO_RAD;

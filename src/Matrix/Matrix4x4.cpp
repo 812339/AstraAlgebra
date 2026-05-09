@@ -143,72 +143,49 @@ Matrix4x4 Matrix4x4::inverse() const {
         }
     }
     
-    // 使用 double 进行中间计算，避免极端值溢出
-    double a00 = m[0][0], a01 = m[0][1], a02 = m[0][2], a03 = m[0][3];
-    double a10 = m[1][0], a11 = m[1][1], a12 = m[1][2], a13 = m[1][3];
-    double a20 = m[2][0], a21 = m[2][1], a22 = m[2][2], a23 = m[2][3];
-    double a30 = m[3][0], a31 = m[3][1], a32 = m[3][2], a33 = m[3][3];
+    float a00 = m[0][0], a01 = m[0][1], a02 = m[0][2], a03 = m[0][3];
+    float a10 = m[1][0], a11 = m[1][1], a12 = m[1][2], a13 = m[1][3];
+    float a20 = m[2][0], a21 = m[2][1], a22 = m[2][2], a23 = m[2][3];
+    float a30 = m[3][0], a31 = m[3][1], a32 = m[3][2], a33 = m[3][3];
     
-    double b00 = a00*a11 - a01*a10;
-    double b01 = a00*a12 - a02*a10;
-    double b02 = a00*a13 - a03*a10;
-    double b03 = a01*a12 - a02*a11;
-    double b04 = a01*a13 - a03*a11;
-    double b05 = a02*a13 - a03*a12;
-    double b06 = a20*a31 - a21*a30;
-    double b07 = a20*a32 - a22*a30;
-    double b08 = a20*a33 - a23*a30;
-    double b09 = a21*a32 - a22*a31;
-    double b10 = a21*a33 - a23*a31;
-    double b11 = a22*a33 - a23*a32;
+    float b00 = a00*a11 - a01*a10;
+    float b01 = a00*a12 - a02*a10;
+    float b02 = a00*a13 - a03*a10;
+    float b03 = a01*a12 - a02*a11;
+    float b04 = a01*a13 - a03*a11;
+    float b05 = a02*a13 - a03*a12;
+    float b06 = a20*a31 - a21*a30;
+    float b07 = a20*a32 - a22*a30;
+    float b08 = a20*a33 - a23*a30;
+    float b09 = a21*a32 - a22*a31;
+    float b10 = a21*a33 - a23*a31;
+    float b11 = a22*a33 - a23*a32;
     
-    double det = b00*b11 - b01*b10 + b02*b09 + b03*b08 - b04*b07 + b05*b06;
+    float det = b00*b11 - b01*b10 + b02*b09 + b03*b08 - b04*b07 + b05*b06;
     
-    // 检查行列式是否为零、无穷大或NaN
-    if (Math::abs(det) < Math::EPSILON || std::isinf(det) || std::isnan(det)) {
+    if (Math::abs(det) < Math::EPSILON) {
         return Matrix4x4::identity;
     }
     
-    double inv_det = 1.0 / det;
-    
-    // 计算逆矩阵元素
-    double r00 = (a11*b11 - a12*b10 + a13*b09) * inv_det;
-    double r01 = (a02*b10 - a01*b11 - a03*b09) * inv_det;
-    double r02 = (a31*b05 - a32*b04 + a33*b03) * inv_det;
-    double r03 = (a22*b04 - a21*b05 - a23*b03) * inv_det;
-    
-    double r10 = (a12*b08 - a10*b11 - a13*b07) * inv_det;
-    double r11 = (a00*b11 - a02*b08 + a03*b07) * inv_det;
-    double r12 = (a32*b02 - a30*b05 - a33*b01) * inv_det;
-    double r13 = (a20*b05 - a22*b02 + a23*b01) * inv_det;
-    
-    double r20 = (a10*b10 - a11*b08 + a13*b06) * inv_det;
-    double r21 = (a01*b08 - a00*b10 - a03*b06) * inv_det;
-    double r22 = (a30*b04 - a31*b02 + a33*b00) * inv_det;
-    double r23 = (a21*b02 - a20*b04 - a23*b00) * inv_det;
-    
-    double r30 = (a11*b07 - a10*b09 - a12*b06) * inv_det;
-    double r31 = (a00*b09 - a01*b07 + a02*b06) * inv_det;
-    double r32 = (a31*b01 - a30*b03 - a32*b00) * inv_det;
-    double r33 = (a20*b03 - a21*b01 + a22*b00) * inv_det;
-    
-    // 如果任何元素是NaN或无穷大，返回单位矩阵
-    if (std::isnan(r00) || std::isnan(r01) || std::isnan(r02) || std::isnan(r03) ||
-        std::isnan(r10) || std::isnan(r11) || std::isnan(r12) || std::isnan(r13) ||
-        std::isnan(r20) || std::isnan(r21) || std::isnan(r22) || std::isnan(r23) ||
-        std::isnan(r30) || std::isnan(r31) || std::isnan(r32) || std::isnan(r33) ||
-        std::isinf(r00) || std::isinf(r01) || std::isinf(r02) || std::isinf(r03) ||
-        std::isinf(r10) || std::isinf(r11) || std::isinf(r12) || std::isinf(r13) ||
-        std::isinf(r20) || std::isinf(r21) || std::isinf(r22) || std::isinf(r23) ||
-        std::isinf(r30) || std::isinf(r31) || std::isinf(r32) || std::isinf(r33)) {
-        return Matrix4x4::identity;
-    }
+    float inv_det = 1.0f / det;
     
     return Matrix4x4(
-        static_cast<float>(r00), static_cast<float>(r01), static_cast<float>(r02), static_cast<float>(r03),
-        static_cast<float>(r10), static_cast<float>(r11), static_cast<float>(r12), static_cast<float>(r13),
-        static_cast<float>(r20), static_cast<float>(r21), static_cast<float>(r22), static_cast<float>(r23),
-        static_cast<float>(r30), static_cast<float>(r31), static_cast<float>(r32), static_cast<float>(r33)
+        (a11*b11 - a12*b10 + a13*b09) * inv_det,
+        (a02*b10 - a01*b11 - a03*b09) * inv_det,
+        (a31*b05 - a32*b04 + a33*b03) * inv_det,
+        (a22*b04 - a21*b05 - a23*b03) * inv_det,
+        (a12*b08 - a10*b11 - a13*b07) * inv_det,
+        (a00*b11 - a02*b08 + a03*b07) * inv_det,
+        (a32*b02 - a30*b05 - a33*b01) * inv_det,
+        (a20*b05 - a22*b02 + a23*b01) * inv_det,
+        (a10*b10 - a11*b08 + a13*b06) * inv_det,
+        (a01*b08 - a00*b10 - a03*b06) * inv_det,
+        (a30*b04 - a31*b02 + a33*b00) * inv_det,
+        (a21*b02 - a20*b04 - a23*b00) * inv_det,
+        (a11*b07 - a10*b09 - a12*b06) * inv_det,
+        (a00*b09 - a01*b07 + a02*b06) * inv_det,
+        (a31*b01 - a30*b03 - a32*b00) * inv_det,
+        (a20*b03 - a21*b01 + a22*b00) * inv_det
     );
 }
 
@@ -306,33 +283,6 @@ Matrix4x4 Matrix4x4::rotation(const Vector3& axis, float angle, bool isDegrees) 
 
 Matrix4x4 Matrix4x4::rotation(const Vector3& eulerAngles, bool isDegrees) {
     return rotationZ(eulerAngles.z, isDegrees) * rotationY(eulerAngles.y, isDegrees) * rotationX(eulerAngles.x, isDegrees);
-}
-
-Matrix4x4 Matrix4x4::lookAt(const Vector3& eye, const Vector3& target, const Vector3& up) {
-    float fx = target.x - eye.x;
-    float fy = target.y - eye.y;
-    float fz = target.z - eye.z;
-    float fLen = std::sqrt(fx * fx + fy * fy + fz * fz);
-    float fInvLen = (fLen > Math::EPSILON) ? 1.0f / fLen : 0.0f;
-    fx *= fInvLen; fy *= fInvLen; fz *= fInvLen;
-    
-    float rx = fy * up.z - fz * up.y;
-    float ry = fz * up.x - fx * up.z;
-    float rz = fx * up.y - fy * up.x;
-    float rLen = std::sqrt(rx * rx + ry * ry + rz * rz);
-    float rInvLen = (rLen > Math::EPSILON) ? 1.0f / rLen : 0.0f;
-    rx *= rInvLen; ry *= rInvLen; rz *= rInvLen;
-    
-    float ux = ry * fz - rz * fy;
-    float uy = rz * fx - rx * fz;
-    float uz = rx * fy - ry * fx;
-    
-    return Matrix4x4(
-        rx, ry, rz, -(rx * eye.x + ry * eye.y + rz * eye.z),
-        ux, uy, uz, -(ux * eye.x + uy * eye.y + uz * eye.z),
-        -fx, -fy, -fz, fx * eye.x + fy * eye.y + fz * eye.z,
-        0.0f, 0.0f, 0.0f, 1.0f
-    );
 }
 
 Matrix4x4 Matrix4x4::orthographic(float left, float right, float bottom, float top, float nearPlane, float farPlane) {
