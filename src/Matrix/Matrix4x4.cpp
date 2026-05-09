@@ -335,19 +335,6 @@ Matrix4x4 Matrix4x4::lookAt(const Vector3& eye, const Vector3& target, const Vec
     );
 }
 
-Matrix4x4 Matrix4x4::perspective(float fov, float aspectRatio, float nearPlane, float farPlane) {
-    float fovRad = fov * Math::DEG_TO_RAD;
-    float f = 1.0f / tanf(fovRad * 0.5f);
-    float nf = 1.0f / (nearPlane - farPlane);
-    
-    return Matrix4x4(
-        f / aspectRatio, 0.0f, 0.0f, 0.0f,
-        0.0f, f, 0.0f, 0.0f,
-        0.0f, 0.0f, (farPlane + nearPlane) * nf, 2.0f * farPlane * nearPlane * nf,
-        0.0f, 0.0f, -1.0f, 0.0f
-    );
-}
-
 Matrix4x4 Matrix4x4::orthographic(float left, float right, float bottom, float top, float nearPlane, float farPlane) {
     float lr = 1.0f / (left - right);
     float bt = 1.0f / (bottom - top);
