@@ -52,14 +52,13 @@ public:
     constexpr Quaternion operator-(const Quaternion& other) const {
         return Quaternion(x - other.x, y - other.y, z - other.z, w - other.w);
     }
-    // 四元数乘法，这个公式有点长，记住就行
-    constexpr Quaternion operator*(const Quaternion& other) const {
-        return Quaternion(
-            w * other.x + x * other.w + y * other.z - z * other.y,
-            w * other.y - x * other.z + y * other.w + z * other.x,
-            w * other.z + x * other.y - y * other.x + z * other.w,
-            w * other.w - x * other.x - y * other.y - z * other.z
-        );
+    // 四元数乘法，优化版本减少重复计算
+    [[nodiscard]] constexpr Quaternion operator*(const Quaternion& other) const {
+        float nx = w * other.x + x * other.w + y * other.z - z * other.y;
+        float ny = w * other.y - x * other.z + y * other.w + z * other.x;
+        float nz = w * other.z + x * other.y - y * other.x + z * other.w;
+        float nw = w * other.w - x * other.x - y * other.y - z * other.z;
+        return Quaternion(nx, ny, nz, nw);
     }
     constexpr Quaternion operator*(float scalar) const {
         return Quaternion(x * scalar, y * scalar, z * scalar, w * scalar);
