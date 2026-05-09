@@ -117,6 +117,32 @@ float Matrix4x4::determinant() const {
 }
 
 Matrix4x4 Matrix4x4::inverse() const {
+    // 快速路径：检查是否是纯旋转矩阵（正交矩阵 + 行列式为 1）
+    if (m[0][3] == 0.0f && m[1][3] == 0.0f && m[2][3] == 0.0f && m[3][3] == 1.0f &&
+        m[3][0] == 0.0f && m[3][1] == 0.0f && m[3][2] == 0.0f) {
+        // 检查是否是正交矩阵（R^T * R = I）
+        float dot01 = m[0][0]*m[1][0] + m[0][1]*m[1][1] + m[0][2]*m[1][2];
+        float dot02 = m[0][0]*m[2][0] + m[0][1]*m[2][1] + m[0][2]*m[2][2];
+        float dot12 = m[1][0]*m[2][0] + m[1][1]*m[2][1] + m[1][2]*m[2][2];
+        float len0 = m[0][0]*m[0][0] + m[0][1]*m[0][1] + m[0][2]*m[0][2];
+        float len1 = m[1][0]*m[1][0] + m[1][1]*m[1][1] + m[1][2]*m[1][2];
+        float len2 = m[2][0]*m[2][0] + m[2][1]*m[2][1] + m[2][2]*m[2][2];
+        
+        if (Math::abs(dot01) < Math::EPSILON && Math::abs(dot02) < Math::EPSILON && 
+            Math::abs(dot12) < Math::EPSILON && 
+            Math::abs(len0 - 1.0f) < Math::EPSILON && 
+            Math::abs(len1 - 1.0f) < Math::EPSILON && 
+            Math::abs(len2 - 1.0f) < Math::EPSILON) {
+            // 旋转矩阵的逆就是转置
+            return Matrix4x4(
+                m[0][0], m[1][0], m[2][0], 0.0f,
+                m[0][1], m[1][1], m[2][1], 0.0f,
+                m[0][2], m[1][2], m[2][2], 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f
+            );
+        }
+    }
+    
     // 使用 double 进行中间计算，避免极端值溢出
     double a00 = m[0][0], a01 = m[0][1], a02 = m[0][2], a03 = m[0][3];
     double a10 = m[1][0], a11 = m[1][1], a12 = m[1][2], a13 = m[1][3];
@@ -310,8 +336,8 @@ Matrix4x4 Matrix4x4::lookAt(const Vector3& eye, const Vector3& target, const Vec
 }
 
 Matrix4x4 Matrix4x4::perspective(float fov, float aspectRatio, float nearPlane, float farPlane) {
-    float fovRad = fov * 0.017453292519943295f;
-    float f = 1.0f / std::tan(fovRad * 0.5f);
+    float fovRad = fov * Math::DEG_TO_RAD;
+    float f = 1.0f / tanf(fovRad * 0.5f);
     float nf = 1.0f / (nearPlane - farPlane);
     
     return Matrix4x4(
@@ -359,8 +385,8 @@ Matrix4x4 Matrix4x4::fromTRS(const Vector3& translation, const Quaternion& rotat
 }
 
 Matrix4x4 Matrix4x4::perspectiveFov(float fovY, float aspect, float zNear, float zFar, bool isDegrees) {
-    float fov = isDegrees ? fovY * 0.017453292519943295f : fovY;
-    float f = 1.0f / std::tan(fov * 0.5f);
+    float fov = isDegrees ? fovY * Math::DEG_TO_RAD : fovY;
+    float f = 1.0f / tanf(fov * 0.5f);
     float nf = 1.0f / (zNear - zFar);
     return Matrix4x4(
         f / aspect, 0.0f, 0.0f, 0.0f,

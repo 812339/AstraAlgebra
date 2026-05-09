@@ -53,16 +53,11 @@ Vector3& Vector3::operator=(Vector3&& other) noexcept {
 
 // 复合赋值操作符
 Vector3& Vector3::operator+=(const Vector3& other) {
-#if defined(__AVX2__) || defined(__AVX__)
-    __m256 a = _mm256_load_ps(data);
-    __m256 b = _mm256_load_ps(other.data);
-    __m256 result = _mm256_add_ps(a, b);
-    _mm256_store_ps(data, result);
-#elif defined(__SSE2__) || defined(_M_X64) || defined(_M_IX86_FP2)
-    __m128 a = _mm_load_ps(data);
-    __m128 b = _mm_load_ps(other.data);
+#if defined(__AVX2__) || defined(__AVX__) || defined(__SSE2__) || defined(_M_X64) || defined(_M_IX86_FP2)
+    __m128 a = _mm_loadu_ps(data);
+    __m128 b = _mm_loadu_ps(other.data);
     __m128 result = _mm_add_ps(a, b);
-    _mm_store_ps(data, result);
+    _mm_storeu_ps(data, result);
 #else
     x += other.x;
     y += other.y;
@@ -72,16 +67,11 @@ Vector3& Vector3::operator+=(const Vector3& other) {
 }
 
 Vector3& Vector3::operator-=(const Vector3& other) {
-#if defined(__AVX2__) || defined(__AVX__)
-    __m256 a = _mm256_load_ps(data);
-    __m256 b = _mm256_load_ps(other.data);
-    __m256 result = _mm256_sub_ps(a, b);
-    _mm256_store_ps(data, result);
-#elif defined(__SSE2__) || defined(_M_X64) || defined(_M_IX86_FP2)
-    __m128 a = _mm_load_ps(data);
-    __m128 b = _mm_load_ps(other.data);
+#if defined(__AVX2__) || defined(__AVX__) || defined(__SSE2__) || defined(_M_X64) || defined(_M_IX86_FP2)
+    __m128 a = _mm_loadu_ps(data);
+    __m128 b = _mm_loadu_ps(other.data);
     __m128 result = _mm_sub_ps(a, b);
-    _mm_store_ps(data, result);
+    _mm_storeu_ps(data, result);
 #else
     x -= other.x;
     y -= other.y;
@@ -91,16 +81,11 @@ Vector3& Vector3::operator-=(const Vector3& other) {
 }
 
 Vector3& Vector3::operator*=(float scalar) {
-#if defined(__AVX2__) || defined(__AVX__)
-    __m256 a = _mm256_load_ps(data);
-    __m256 s = _mm256_set1_ps(scalar);
-    __m256 result = _mm256_mul_ps(a, s);
-    _mm256_store_ps(data, result);
-#elif defined(__SSE2__) || defined(_M_X64) || defined(_M_IX86_FP2)
-    __m128 a = _mm_load_ps(data);
+#if defined(__AVX2__) || defined(__AVX__) || defined(__SSE2__) || defined(_M_X64) || defined(_M_IX86_FP2)
+    __m128 a = _mm_loadu_ps(data);
     __m128 s = _mm_set1_ps(scalar);
     __m128 result = _mm_mul_ps(a, s);
-    _mm_store_ps(data, result);
+    _mm_storeu_ps(data, result);
 #else
     x *= scalar;
     y *= scalar;
@@ -110,16 +95,11 @@ Vector3& Vector3::operator*=(float scalar) {
 }
 
 Vector3& Vector3::operator*=(const Vector3& other) {
-#if defined(__AVX2__) || defined(__AVX__)
-    __m256 a = _mm256_load_ps(data);
-    __m256 b = _mm256_load_ps(other.data);
-    __m256 result = _mm256_mul_ps(a, b);
-    _mm256_store_ps(data, result);
-#elif defined(__SSE2__) || defined(_M_X64) || defined(_M_IX86_FP2)
-    __m128 a = _mm_load_ps(data);
-    __m128 b = _mm_load_ps(other.data);
+#if defined(__AVX2__) || defined(__AVX__) || defined(__SSE2__) || defined(_M_X64) || defined(_M_IX86_FP2)
+    __m128 a = _mm_loadu_ps(data);
+    __m128 b = _mm_loadu_ps(other.data);
     __m128 result = _mm_mul_ps(a, b);
-    _mm_store_ps(data, result);
+    _mm_storeu_ps(data, result);
 #else
     x *= other.x;
     y *= other.y;
@@ -134,18 +114,12 @@ Vector3& Vector3::operator/=(float scalar) {
 }
 
 Vector3& Vector3::operator/=(const Vector3& other) {
-#if defined(__AVX2__) || defined(__AVX__)
-    __m256 a = _mm256_load_ps(data);
-    __m256 b = _mm256_load_ps(other.data);
-    __m256 invB = _mm256_div_ps(_mm256_set1_ps(1.0f), b);
-    __m256 result = _mm256_mul_ps(a, invB);
-    _mm256_store_ps(data, result);
-#elif defined(__SSE2__) || defined(_M_X64) || defined(_M_IX86_FP2)
-    __m128 a = _mm_load_ps(data);
-    __m128 b = _mm_load_ps(other.data);
+#if defined(__AVX2__) || defined(__AVX__) || defined(__SSE2__) || defined(_M_X64) || defined(_M_IX86_FP2)
+    __m128 a = _mm_loadu_ps(data);
+    __m128 b = _mm_loadu_ps(other.data);
     __m128 invB = _mm_div_ps(_mm_set1_ps(1.0f), b);
     __m128 result = _mm_mul_ps(a, invB);
-    _mm_store_ps(data, result);
+    _mm_storeu_ps(data, result);
 #else
     x /= other.x;
     y /= other.y;
