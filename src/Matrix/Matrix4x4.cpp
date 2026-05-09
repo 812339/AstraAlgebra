@@ -283,20 +283,35 @@ Matrix4x4 Matrix4x4::rotation(const Vector3& eulerAngles, bool isDegrees) {
 }
 
 Matrix4x4 Matrix4x4::lookAt(const Vector3& eye, const Vector3& target, const Vector3& up) {
-    Vector3 f = (target - eye).normalized();
-    Vector3 r = f.cross(up).normalized();
-    Vector3 u = r.cross(f);
+    float fx = target.x - eye.x;
+    float fy = target.y - eye.y;
+    float fz = target.z - eye.z;
+    float fLen = std::sqrt(fx * fx + fy * fy + fz * fz);
+    float fInvLen = (fLen > Math::EPSILON) ? 1.0f / fLen : 0.0f;
+    fx *= fInvLen; fy *= fInvLen; fz *= fInvLen;
+    
+    float rx = fy * up.z - fz * up.y;
+    float ry = fz * up.x - fx * up.z;
+    float rz = fx * up.y - fy * up.x;
+    float rLen = std::sqrt(rx * rx + ry * ry + rz * rz);
+    float rInvLen = (rLen > Math::EPSILON) ? 1.0f / rLen : 0.0f;
+    rx *= rInvLen; ry *= rInvLen; rz *= rInvLen;
+    
+    float ux = ry * fz - rz * fy;
+    float uy = rz * fx - rx * fz;
+    float uz = rx * fy - ry * fx;
     
     return Matrix4x4(
-        r.x, r.y, r.z, -r.dot(eye),
-        u.x, u.y, u.z, -u.dot(eye),
-        -f.x, -f.y, -f.z, f.dot(eye),
+        rx, ry, rz, -(rx * eye.x + ry * eye.y + rz * eye.z),
+        ux, uy, uz, -(ux * eye.x + uy * eye.y + uz * eye.z),
+        -fx, -fy, -fz, fx * eye.x + fy * eye.y + fz * eye.z,
         0.0f, 0.0f, 0.0f, 1.0f
     );
 }
 
 Matrix4x4 Matrix4x4::perspective(float fov, float aspectRatio, float nearPlane, float farPlane) {
-    float f = 1.0f / Math::tan(Math::degToRad(fov) / 2.0f);
+    float fovRad = fov * 0.017453292519943295f;
+    float f = 1.0f / std::tan(fovRad * 0.5f);
     float nf = 1.0f / (nearPlane - farPlane);
     
     return Matrix4x4(
@@ -344,8 +359,8 @@ Matrix4x4 Matrix4x4::fromTRS(const Vector3& translation, const Quaternion& rotat
 }
 
 Matrix4x4 Matrix4x4::perspectiveFov(float fovY, float aspect, float zNear, float zFar, bool isDegrees) {
-    float fov = isDegrees ? Math::degToRad(fovY) : fovY;
-    float f = 1.0f / Math::tan(fov / 2.0f);
+    float fov = isDegrees ? fovY * 0.017453292519943295f : fovY;
+    float f = 1.0f / std::tan(fov * 0.5f);
     float nf = 1.0f / (zNear - zFar);
     return Matrix4x4(
         f / aspect, 0.0f, 0.0f, 0.0f,
@@ -370,13 +385,26 @@ Matrix4x4 Matrix4x4::ortho(float left, float right, float bottom, float top, flo
 }
 
 Matrix4x4 Matrix4x4::lookTo(const Vector3& eye, const Vector3& forward, const Vector3& up) {
-    Vector3 f = forward.normalized();
-    Vector3 r = f.cross(up).normalized();
-    Vector3 u = r.cross(f);
+    float fx = forward.x, fy = forward.y, fz = forward.z;
+    float fLen = std::sqrt(fx * fx + fy * fy + fz * fz);
+    float fInvLen = (fLen > Math::EPSILON) ? 1.0f / fLen : 0.0f;
+    fx *= fInvLen; fy *= fInvLen; fz *= fInvLen;
+    
+    float rx = fy * up.z - fz * up.y;
+    float ry = fz * up.x - fx * up.z;
+    float rz = fx * up.y - fy * up.x;
+    float rLen = std::sqrt(rx * rx + ry * ry + rz * rz);
+    float rInvLen = (rLen > Math::EPSILON) ? 1.0f / rLen : 0.0f;
+    rx *= rInvLen; ry *= rInvLen; rz *= rInvLen;
+    
+    float ux = ry * fz - rz * fy;
+    float uy = rz * fx - rx * fz;
+    float uz = rx * fy - ry * fx;
+    
     return Matrix4x4(
-        r.x, r.y, r.z, -r.dot(eye),
-        u.x, u.y, u.z, -u.dot(eye),
-        -f.x, -f.y, -f.z, f.dot(eye),
+        rx, ry, rz, -(rx * eye.x + ry * eye.y + rz * eye.z),
+        ux, uy, uz, -(ux * eye.x + uy * eye.y + uz * eye.z),
+        -fx, -fy, -fz, fx * eye.x + fy * eye.y + fz * eye.z,
         0.0f, 0.0f, 0.0f, 1.0f
     );
 }

@@ -11,6 +11,7 @@
 #include <AstraAlgebra/Geometry/Triangle.h>
 #include <AstraAlgebra/Geometry/Bounds.h>
 #include <cstdlib>  // 包含std::malloc和std::free的定义
+#include <cstring>  // 包含memcpy和memset的定义
 
 // CUDA支持检测
 #ifdef __CUDA_ARCH__

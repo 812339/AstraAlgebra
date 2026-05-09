@@ -4,6 +4,7 @@
 
 #include <AstraAlgebra/Core/MathUtils.h>
 #include <iostream>
+#include <cmath>
 
 namespace AstraAlgebra {
 
@@ -103,8 +104,8 @@ public:
 
     // 归一化
     Vector3& normalize();
-    [[nodiscard]] constexpr Vector3 normalized() const {
-        float len = length();
+    [[nodiscard]] inline Vector3 normalized() const {
+        float len = std::sqrt(lengthSquared());
         if (len < Math::EPSILON) {
             return Vector3::zero;
         }
@@ -118,7 +119,7 @@ public:
         }
         return *this * Math::fastInvSqrt(lenSq);
     }
-    [[nodiscard]] constexpr Vector3 unit() const { return normalized(); }
+    [[nodiscard]] inline Vector3 unit() const { return normalized(); }
 
     // 点积
     [[nodiscard]] constexpr float dot(const Vector3& other) const {
@@ -232,13 +233,13 @@ public:
     [[nodiscard]] static constexpr Vector3 round(const Vector3& v) {
         return Vector3(Math::round(v.x), Math::round(v.y), Math::round(v.z));
     }
-    [[nodiscard]] static constexpr Vector3 normalize(const Vector3& v) { return v.normalized(); }
+    [[nodiscard]] static inline Vector3 normalize(const Vector3& v) { return v.normalized(); }
     [[nodiscard]] static constexpr float dot(const Vector3& a, const Vector3& b) { return a.dot(b); }
     [[nodiscard]] static constexpr Vector3 cross(const Vector3& a, const Vector3& b) { return a.cross(b); }
-    [[nodiscard]] static constexpr float angle(const Vector3& a, const Vector3& b) { return a.angle(b); }
+    [[nodiscard]] static inline float angle(const Vector3& a, const Vector3& b) { return a.angle(b); }
     [[nodiscard]] static constexpr float distance(const Vector3& a, const Vector3& b) { return a.distance(b); }
     [[nodiscard]] static constexpr Vector3 lerp(const Vector3& a, const Vector3& b, float t) { return a.lerp(b, t); }
-    [[nodiscard]] static constexpr Vector3 slerp(const Vector3& a, const Vector3& b, float t) { return a.slerp(b, t); }
+    [[nodiscard]] static inline Vector3 slerp(const Vector3& a, const Vector3& b, float t) { return a.slerp(b, t); }
     
     // 球坐标转xyz
     [[nodiscard]] static constexpr Vector3 fromSpherical(float radius, float theta, float phi) {
@@ -258,7 +259,7 @@ public:
     }
     [[nodiscard]] constexpr bool isUnit() const { return Math::approximatelyEqual(lengthSquared(), 1.0f); }
     // 找个垂直向量
-    [[nodiscard]] constexpr Vector3 perpendicular() const {
+    [[nodiscard]] inline Vector3 perpendicular() const {
         if (Math::abs(x) < Math::abs(y)) {
             return Vector3(-z, 0.0f, x).normalized();
         } else {
@@ -266,7 +267,7 @@ public:
         }
     }
     // 绕轴旋转，罗德里格斯公式
-    [[nodiscard]] constexpr Vector3 rotate(float angle, const Vector3& axis) const {
+    [[nodiscard]] inline Vector3 rotate(float angle, const Vector3& axis) const {
         float cosAngle = Math::cos(angle);
         float sinAngle = Math::sin(angle);
         Vector3 normAxis = axis.normalized();

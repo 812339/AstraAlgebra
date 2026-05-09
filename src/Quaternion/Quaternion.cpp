@@ -164,15 +164,16 @@ Quaternion Quaternion::slerp(const Quaternion& other, float t) const {
         return nlerp(otherAdj, t, false);
     }
     
-    float angle = Math::acos_rt(Math::clamp(dotProduct, -1.0f, 1.0f));
-    float sinAngle = Math::sin_rt(angle);
+    float angle = std::acos(Math::clamp(dotProduct, -1.0f, 1.0f));
+    float sinAngle = std::sin(angle);
     
     if (Math::abs(sinAngle) < Math::EPSILON) {
         return nlerp(otherAdj, t, false);
     }
     
-    float t1 = Math::sin_rt((1.0f - t) * angle) / sinAngle;
-    float t2 = Math::sin_rt(t * angle) / sinAngle;
+    float invSinAngle = 1.0f / sinAngle;
+    float t1 = std::sin((1.0f - t) * angle) * invSinAngle;
+    float t2 = std::sin(t * angle) * invSinAngle;
     
     return Quaternion(
         x * t1 + otherAdj.x * t2,
@@ -195,14 +196,15 @@ Quaternion Quaternion::fastSlerp(const Quaternion& other, float t) const {
         return nlerp(otherAdj, t, false);
     }
     
-    float theta = Math::acos_rt(dotProduct);
+    float theta = std::acos(dotProduct);
     float thetaT = t * theta;
     
-    float sinTheta = Math::sin_rt(theta);
-    float sinThetaT = Math::sin_rt(thetaT);
+    float sinTheta = std::sin(theta);
+    float sinThetaT = std::sin(thetaT);
     
-    float ratio = sinThetaT / sinTheta;
-    float ratio0 = Math::cos_rt(thetaT) - dotProduct * ratio;
+    float invSinTheta = 1.0f / sinTheta;
+    float ratio = sinThetaT * invSinTheta;
+    float ratio0 = std::cos(thetaT) - dotProduct * ratio;
     
     return Quaternion(
         ratio0 * x + ratio * otherAdj.x,
