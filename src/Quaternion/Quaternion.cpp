@@ -152,44 +152,34 @@ Vector3 Quaternion::rotate(const Vector3& vector) const {
 }
 
 Quaternion Quaternion::slerp(const Quaternion& other, float t) const {
-    float dotProduct = x * other.x + y * other.y + z * other.z + w * other.w;
-    float sign = (dotProduct < 0.0f) ? -1.0f : 1.0f;
-    dotProduct *= sign;
+    float dotProduct = dot(other);
+    Quaternion otherAdj = other;
+    
+    if (dotProduct < 0.0f) {
+        otherAdj = -other;
+        dotProduct = -dotProduct;
+    }
     
     if (dotProduct > 0.9995f) {
-        float t1 = 1.0f - t;
-        float t2 = t * sign;
-        return Quaternion(
-            x * t1 + other.x * t2,
-            y * t1 + other.y * t2,
-            z * t1 + other.z * t2,
-            w * t1 + other.w * t2
-        ).normalized();
+        return nlerp(otherAdj, t, false);
     }
     
     float angle = std::acos(Math::clamp(dotProduct, -1.0f, 1.0f));
     float sinAngle = std::sin(angle);
     
     if (Math::abs(sinAngle) < Math::EPSILON) {
-        float t1 = 1.0f - t;
-        float t2 = t * sign;
-        return Quaternion(
-            x * t1 + other.x * t2,
-            y * t1 + other.y * t2,
-            z * t1 + other.z * t2,
-            w * t1 + other.w * t2
-        ).normalized();
+        return nlerp(otherAdj, t, false);
     }
     
     float invSinAngle = 1.0f / sinAngle;
     float t1 = std::sin((1.0f - t) * angle) * invSinAngle;
-    float t2 = std::sin(t * angle) * invSinAngle * sign;
+    float t2 = std::sin(t * angle) * invSinAngle;
     
     return Quaternion(
-        x * t1 + other.x * t2,
-        y * t1 + other.y * t2,
-        z * t1 + other.z * t2,
-        w * t1 + other.w * t2
+        x * t1 + otherAdj.x * t2,
+        y * t1 + otherAdj.y * t2,
+        z * t1 + otherAdj.z * t2,
+        w * t1 + otherAdj.w * t2
     );
 }
 

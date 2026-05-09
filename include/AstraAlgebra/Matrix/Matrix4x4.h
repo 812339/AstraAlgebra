@@ -240,15 +240,15 @@ public:
         float fx = target.x - eye.x;
         float fy = target.y - eye.y;
         float fz = target.z - eye.z;
-        float fLen2 = fx * fx + fy * fy + fz * fz;
-        float fInvLen = Math::fastInvSqrt(fLen2);
+        float fLen = std::sqrt(fx * fx + fy * fy + fz * fz);
+        float fInvLen = (fLen > Math::EPSILON) ? 1.0f / fLen : 0.0f;
         fx *= fInvLen; fy *= fInvLen; fz *= fInvLen;
         
         float rx = fy * up.z - fz * up.y;
         float ry = fz * up.x - fx * up.z;
         float rz = fx * up.y - fy * up.x;
-        float rLen2 = rx * rx + ry * ry + rz * rz;
-        float rInvLen = Math::fastInvSqrt(rLen2);
+        float rLen = std::sqrt(rx * rx + ry * ry + rz * rz);
+        float rInvLen = (rLen > Math::EPSILON) ? 1.0f / rLen : 0.0f;
         rx *= rInvLen; ry *= rInvLen; rz *= rInvLen;
         
         float ux = ry * fz - rz * fy;
