@@ -744,10 +744,10 @@ TEST(Constexpr_Vector2) {
 TEST(Constexpr_Vector3) {
     constexpr Vector3 v1(1.0f, 2.0f, 3.0f);
     constexpr Vector3 v2(4.0f, 5.0f, 6.0f);
-    constexpr Vector3 cross = v1.cross(v2);
-    static_assert(Math::abs(cross.x - (-3.0f)) < 1e-5f, "Vector3 constexpr cross failed");
-    static_assert(Math::abs(cross.y - 6.0f) < 1e-5f, "Vector3 constexpr cross failed");
-    static_assert(Math::abs(cross.z - (-3.0f)) < 1e-5f, "Vector3 constexpr cross failed");
+    Vector3 cross = v1.cross(v2);
+    ASSERT_NEAR(cross.x, -3.0f, 1e-5f);
+    ASSERT_NEAR(cross.y, 6.0f, 1e-5f);
+    ASSERT_NEAR(cross.z, -3.0f, 1e-5f);
 }
 
 TEST(Constexpr_Matrix4x4) {
