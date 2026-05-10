@@ -7,6 +7,11 @@
 #include <AstraAlgebra/Vector/Vector3.h>
 #include <iostream>
 
+// SIMD支持
+#if defined(__SSE2__) || defined(__AVX__) || defined(__AVX2__) || defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
+#include <emmintrin.h>
+#endif
+
 namespace AstraAlgebra {
 
 // 前向声明
@@ -70,7 +75,41 @@ public:
     }
     // 四元数旋转向量，游戏里经常用
     // 使用 t = 2 * cross(q.xyz, v) 公式，比旋转矩阵法少一半运算
-    constexpr Vector3 operator*(const Vector3& vector) const {
+    [[nodiscard]] Vector3 operator*(const Vector3& vector) const {
+#if defined(__SSE2__)
+        // SSE向量化：并行计算所有分量
+        __m128 q_vec = _mm_set_ps(w, z, y, x);
+        __m128 v_vec = _mm_set_ps(0.0f, vector.z, vector.y, vector.x);
+        
+        // 提取q.xyz（将w分量置零）
+        __m128 xyz_mask = _mm_castsi128_ps(_mm_set_epi32(0, -1, -1, -1));
+        __m128 q_xyz = _mm_and_ps(q_vec, xyz_mask);
+        
+        // t = 2 * cross(q.xyz, v)
+        __m128 q_yzx = _mm_shuffle_ps(q_xyz, q_xyz, _MM_SHUFFLE(3,0,2,1));
+        __m128 v_zxy = _mm_shuffle_ps(v_vec, v_vec, _MM_SHUFFLE(3,1,0,2));
+        __m128 q_zxy = _mm_shuffle_ps(q_xyz, q_xyz, _MM_SHUFFLE(3,1,0,2));
+        __m128 v_yzx = _mm_shuffle_ps(v_vec, v_vec, _MM_SHUFFLE(3,0,2,1));
+        
+        __m128 cross = _mm_sub_ps(_mm_mul_ps(q_yzx, v_zxy), _mm_mul_ps(q_zxy, v_yzx));
+        __m128 t = _mm_add_ps(cross, cross);
+        
+        // result = v + w*t + cross(q.xyz, t)
+        __m128 w_vec = _mm_shuffle_ps(q_vec, q_vec, _MM_SHUFFLE(3,3,3,3));
+        __m128 w_t = _mm_mul_ps(w_vec, t);
+        
+        __m128 t_zxy = _mm_shuffle_ps(t, t, _MM_SHUFFLE(3,1,0,2));
+        __m128 t_yzx = _mm_shuffle_ps(t, t, _MM_SHUFFLE(3,0,2,1));
+        __m128 cross2 = _mm_sub_ps(_mm_mul_ps(q_yzx, t_zxy), _mm_mul_ps(q_zxy, t_yzx));
+        
+        __m128 result = _mm_add_ps(v_vec, _mm_add_ps(w_t, cross2));
+        
+        Vector3 res;
+        _mm_store_ss(&res.x, result);
+        _mm_store_ss(&res.y, _mm_shuffle_ps(result, result, _MM_SHUFFLE(1,1,1,1)));
+        _mm_store_ss(&res.z, _mm_shuffle_ps(result, result, _MM_SHUFFLE(2,2,2,2)));
+        return res;
+#else
         float t1 = 2.0f * (y * vector.z - z * vector.y);
         float t2 = 2.0f * (z * vector.x - x * vector.z);
         float t3 = 2.0f * (x * vector.y - y * vector.x);
@@ -80,6 +119,7 @@ public:
             vector.y + w * t2 + (z * t1 - x * t3),
             vector.z + w * t3 + (x * t2 - y * t1)
         );
+#endif
     }
 
     // 复合赋值

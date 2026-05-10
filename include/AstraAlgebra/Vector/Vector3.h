@@ -6,6 +6,10 @@
 #include <iostream>
 #include <cmath>
 
+#if defined(__SSE2__)
+#include <emmintrin.h>
+#endif
+
 namespace AstraAlgebra {
 
 // 3D向量，嗯。用union是为了后面和SIMD对齐方便，让我想想...应该吧
@@ -128,12 +132,30 @@ public:
     }
 
     // 叉积，返回垂直于两个向量的向量
-    [[nodiscard]] constexpr Vector3 cross(const Vector3& other) const {
+    [[nodiscard]] Vector3 cross(const Vector3& other) const {
+#if defined(__SSE2__)
+        __m128 a = _mm_loadu_ps(&x);
+        __m128 b = _mm_loadu_ps(&other.x);
+        
+        __m128 a_yzx = _mm_shuffle_ps(a, a, _MM_SHUFFLE(3,0,2,1));
+        __m128 a_zxy = _mm_shuffle_ps(a, a, _MM_SHUFFLE(3,1,0,2));
+        __m128 b_zxy = _mm_shuffle_ps(b, b, _MM_SHUFFLE(3,1,0,2));
+        __m128 b_yzx = _mm_shuffle_ps(b, b, _MM_SHUFFLE(3,0,2,1));
+        
+        __m128 cross = _mm_sub_ps(_mm_mul_ps(a_yzx, b_zxy), _mm_mul_ps(a_zxy, b_yzx));
+        
+        Vector3 result;
+        _mm_store_ss(&result.x, cross);
+        _mm_store_ss(&result.y, _mm_shuffle_ps(cross, cross, _MM_SHUFFLE(1,1,1,1)));
+        _mm_store_ss(&result.z, _mm_shuffle_ps(cross, cross, _MM_SHUFFLE(2,2,2,2)));
+        return result;
+#else
         return Vector3(
             y * other.z - z * other.y,
             z * other.x - x * other.z,
             x * other.y - y * other.x
         );
+#endif
     }
 
     // 夹角
@@ -236,7 +258,7 @@ public:
     }
     [[nodiscard]] static inline Vector3 normalize(const Vector3& v) { return v.normalized(); }
     [[nodiscard]] static constexpr float dot(const Vector3& a, const Vector3& b) { return a.dot(b); }
-    [[nodiscard]] static constexpr Vector3 cross(const Vector3& a, const Vector3& b) { return a.cross(b); }
+    [[nodiscard]] static inline Vector3 cross(const Vector3& a, const Vector3& b) { return a.cross(b); }
     [[nodiscard]] static inline float angle(const Vector3& a, const Vector3& b) { return a.angle(b); }
     [[nodiscard]] static constexpr float distance(const Vector3& a, const Vector3& b) { return a.distance(b); }
     [[nodiscard]] static constexpr Vector3 lerp(const Vector3& a, const Vector3& b, float t) { return a.lerp(b, t); }

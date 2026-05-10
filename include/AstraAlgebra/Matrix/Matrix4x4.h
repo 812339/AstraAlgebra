@@ -9,6 +9,10 @@
 #include <AstraAlgebra/Vector/Vector4.h>
 #include <iostream>
 
+#if defined(__SSE2__)
+#include <emmintrin.h>
+#endif
+
 namespace AstraAlgebra {
 
 // 4x4矩阵，3D变换的核心，平移旋转缩放投影都靠它
@@ -90,23 +94,79 @@ public:
     Matrix4x4& operator*=(float scalar);
     Matrix4x4& operator/=(float scalar);
 
-    // 矩阵乘向量，注意Vector4和Vector3版本不一样
-    [[nodiscard]] constexpr Vector4 operator*(const Vector4& vector) const {
+    // Vector4版本，直接相乘
+    [[nodiscard]] Vector4 operator*(const Vector4& vector) const {
+#if defined(__SSE2__)
+        __m128 vec = _mm_loadu_ps(&vector.x);
+        
+        __m128 row0 = _mm_loadu_ps(m[0]);
+        __m128 row1 = _mm_loadu_ps(m[1]);
+        __m128 row2 = _mm_loadu_ps(m[2]);
+        __m128 row3 = _mm_loadu_ps(m[3]);
+        
+        _MM_TRANSPOSE4_PS(row0, row1, row2, row3);
+        
+        __m128 vx = _mm_shuffle_ps(vec, vec, _MM_SHUFFLE(0,0,0,0));
+        __m128 vy = _mm_shuffle_ps(vec, vec, _MM_SHUFFLE(1,1,1,1));
+        __m128 vz = _mm_shuffle_ps(vec, vec, _MM_SHUFFLE(2,2,2,2));
+        __m128 vw = _mm_shuffle_ps(vec, vec, _MM_SHUFFLE(3,3,3,3));
+        
+        __m128 result = _mm_add_ps(
+            _mm_add_ps(_mm_mul_ps(vx, row0), _mm_mul_ps(vy, row1)),
+            _mm_add_ps(_mm_mul_ps(vz, row2), _mm_mul_ps(vw, row3))
+        );
+        
+        Vector4 res;
+        _mm_storeu_ps(&res.x, result);
+        return res;
+#else
         return Vector4(
             m[0][0]*vector.x + m[0][1]*vector.y + m[0][2]*vector.z + m[0][3]*vector.w,
             m[1][0]*vector.x + m[1][1]*vector.y + m[1][2]*vector.z + m[1][3]*vector.w,
             m[2][0]*vector.x + m[2][1]*vector.y + m[2][2]*vector.z + m[2][3]*vector.w,
             m[3][0]*vector.x + m[3][1]*vector.y + m[3][2]*vector.z + m[3][3]*vector.w
         );
+#endif
     }
     // Vector3版本会做透视除法，w是算出来的
-    [[nodiscard]] constexpr Vector3 operator*(const Vector3& vector) const {
+    [[nodiscard]] Vector3 operator*(const Vector3& vector) const {
+#if defined(__SSE2__)
+        // SSE向量化：列方法并行计算4行点积
+        __m128 vec = _mm_set_ps(1.0f, vector.z, vector.y, vector.x);
+        
+        __m128 row0 = _mm_loadu_ps(m[0]);
+        __m128 row1 = _mm_loadu_ps(m[1]);
+        __m128 row2 = _mm_loadu_ps(m[2]);
+        __m128 row3 = _mm_loadu_ps(m[3]);
+        
+        _MM_TRANSPOSE4_PS(row0, row1, row2, row3);
+        
+        __m128 vx = _mm_shuffle_ps(vec, vec, _MM_SHUFFLE(0,0,0,0));
+        __m128 vy = _mm_shuffle_ps(vec, vec, _MM_SHUFFLE(1,1,1,1));
+        __m128 vz = _mm_shuffle_ps(vec, vec, _MM_SHUFFLE(2,2,2,2));
+        __m128 vw = _mm_shuffle_ps(vec, vec, _MM_SHUFFLE(3,3,3,3));
+        
+        __m128 result = _mm_add_ps(
+            _mm_add_ps(_mm_mul_ps(vx, row0), _mm_mul_ps(vy, row1)),
+            _mm_add_ps(_mm_mul_ps(vz, row2), _mm_mul_ps(vw, row3))
+        );
+        
+        __m128 w_vals = _mm_shuffle_ps(result, result, _MM_SHUFFLE(3,3,3,3));
+        __m128 divided = _mm_div_ps(result, w_vals);
+        
+        Vector3 res;
+        _mm_store_ss(&res.x, divided);
+        _mm_store_ss(&res.y, _mm_shuffle_ps(divided, divided, _MM_SHUFFLE(1,1,1,1)));
+        _mm_store_ss(&res.z, _mm_shuffle_ps(divided, divided, _MM_SHUFFLE(2,2,2,2)));
+        return res;
+#else
         float w = m[3][0]*vector.x + m[3][1]*vector.y + m[3][2]*vector.z + m[3][3];
         return Vector3(
             (m[0][0]*vector.x + m[0][1]*vector.y + m[0][2]*vector.z + m[0][3]) / w,
             (m[1][0]*vector.x + m[1][1]*vector.y + m[1][2]*vector.z + m[1][3]) / w,
             (m[2][0]*vector.x + m[2][1]*vector.y + m[2][2]*vector.z + m[2][3]) / w
         );
+#endif
     }
 
     // 比较，16个元素都要比
@@ -123,13 +183,27 @@ public:
     [[nodiscard]] constexpr bool operator!=(const Matrix4x4& other) const { return !(*this == other); }
 
     // 转置
-    [[nodiscard]] constexpr Matrix4x4 transposed() const {
+    [[nodiscard]] Matrix4x4 transposed() const {
+#if defined(__SSE2__)
+        __m128 row0 = _mm_loadu_ps(m[0]);
+        __m128 row1 = _mm_loadu_ps(m[1]);
+        __m128 row2 = _mm_loadu_ps(m[2]);
+        __m128 row3 = _mm_loadu_ps(m[3]);
+        _MM_TRANSPOSE4_PS(row0, row1, row2, row3);
+        Matrix4x4 result;
+        _mm_storeu_ps(result.m[0], row0);
+        _mm_storeu_ps(result.m[1], row1);
+        _mm_storeu_ps(result.m[2], row2);
+        _mm_storeu_ps(result.m[3], row3);
+        return result;
+#else
         return Matrix4x4(
             m[0][0], m[1][0], m[2][0], m[3][0],
             m[0][1], m[1][1], m[2][1], m[3][1],
             m[0][2], m[1][2], m[2][2], m[3][2],
             m[0][3], m[1][3], m[2][3], m[3][3]
         );
+#endif
     }
     Matrix4x4& transposeInPlace();
     // 行列式，4x4的有点复杂
@@ -219,15 +293,15 @@ public:
         float fx = target.x - eye.x;
         float fy = target.y - eye.y;
         float fz = target.z - eye.z;
-        float fLen = std::sqrt(fx * fx + fy * fy + fz * fz);
-        float fInvLen = (fLen > Math::EPSILON) ? 1.0f / fLen : 0.0f;
+        float fLenSq = fx * fx + fy * fy + fz * fz;
+        float fInvLen = (fLenSq > Math::EPSILON) ? Math::fastInvSqrtFast(fLenSq) : 0.0f;
         fx *= fInvLen; fy *= fInvLen; fz *= fInvLen;
         
         float rx = fy * up.z - fz * up.y;
         float ry = fz * up.x - fx * up.z;
         float rz = fx * up.y - fy * up.x;
-        float rLen = std::sqrt(rx * rx + ry * ry + rz * rz);
-        float rInvLen = (rLen > Math::EPSILON) ? 1.0f / rLen : 0.0f;
+        float rLenSq = rx * rx + ry * ry + rz * rz;
+        float rInvLen = (rLenSq > Math::EPSILON) ? Math::fastInvSqrtFast(rLenSq) : 0.0f;
         rx *= rInvLen; ry *= rInvLen; rz *= rInvLen;
         
         float ux = ry * fz - rz * fy;
@@ -243,8 +317,13 @@ public:
     }
     // 透视投影
     static inline Matrix4x4 perspective(float fov, float aspectRatio, float nearPlane, float farPlane) {
-        float fovRad = fov * Math::DEG_TO_RAD;
-        float f = 1.0f / std::tan(fovRad * 0.5f);
+        float halfFov = fov * Math::DEG_TO_RAD * 0.5f;
+        // 快速cot近似：cot(x) ≈ 1/x - x/3 - x^3/45 - 2x^5/945
+        float x = halfFov;
+        float x2 = x * x;
+        float x3 = x2 * x;
+        float x5 = x3 * x2;
+        float f = 1.0f / x - x / 3.0f - x3 / 45.0f - 2.0f * x5 / 945.0f;
         float nf = 1.0f / (nearPlane - farPlane);
         Matrix4x4 result;
         result.m[0][0] = f / aspectRatio;
@@ -306,7 +385,7 @@ public:
     // 别名方法
     float getDeterminant() const { return determinant(); }
     Matrix4x4 getInverse() const { return inverse(); }
-    constexpr Matrix4x4 getTranspose() const { return transposed(); }
+    Matrix4x4 getTranspose() const { return transposed(); }
 
     // 输出
     friend std::ostream& operator<<(std::ostream& os, const Matrix4x4& mat);
