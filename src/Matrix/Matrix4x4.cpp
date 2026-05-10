@@ -22,16 +22,16 @@ namespace AstraAlgebra {
 Matrix4x4 Matrix4x4::operator*(const Matrix4x4& other) const {
     Matrix4x4 result;
 #if defined(__AVX2__) || defined(__AVX__) || defined(__SSE2__) || defined(_M_X64) || defined(_M_IX86_FP2)
+    __m128 row0 = _mm_loadu_ps(other.m[0]);
+    __m128 row1 = _mm_loadu_ps(other.m[1]);
+    __m128 row2 = _mm_loadu_ps(other.m[2]);
+    __m128 row3 = _mm_loadu_ps(other.m[3]);
+    
     for (int i = 0; i < 4; ++i) {
         __m128 ai0 = _mm_set1_ps(m[i][0]);
         __m128 ai1 = _mm_set1_ps(m[i][1]);
         __m128 ai2 = _mm_set1_ps(m[i][2]);
         __m128 ai3 = _mm_set1_ps(m[i][3]);
-        
-        __m128 row0 = _mm_loadu_ps(other.m[0]);
-        __m128 row1 = _mm_loadu_ps(other.m[1]);
-        __m128 row2 = _mm_loadu_ps(other.m[2]);
-        __m128 row3 = _mm_loadu_ps(other.m[3]);
         
         __m128 r = _mm_add_ps(
             _mm_add_ps(_mm_mul_ps(ai0, row0), _mm_mul_ps(ai1, row1)),
