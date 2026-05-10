@@ -105,11 +105,12 @@ public:
     // 归一化
     Vector3& normalize();
     [[nodiscard]] inline Vector3 normalized() const {
-        float len = std::sqrt(lengthSquared());
-        if (len < Math::EPSILON) {
+        float lenSq = lengthSquared();
+        if (lenSq < Math::EPSILON * Math::EPSILON) {
             return Vector3::zero;
         }
-        return *this * (1.0f / len);
+        float invLen = Math::fastInvSqrtFast(lenSq);
+        return Vector3(x * invLen, y * invLen, z * invLen);
     }
     // 快速归一化
     [[nodiscard]] constexpr Vector3 fastNormalized() const {

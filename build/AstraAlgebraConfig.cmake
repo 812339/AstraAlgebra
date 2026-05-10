@@ -1,8 +1,0 @@
-# AstraAlgebraConfig.cmake.in - CMake配置模板
-# 安装后用来配置项目的
-
-
-
-include("${CMAKE_CURRENT_LIST_DIR}/AstraAlgebraTargets.cmake")
-
-check_required_components(AstraAlgebra)

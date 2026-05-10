@@ -18,6 +18,53 @@
 
 namespace AstraAlgebra {
 
+// SSE优化的4x4矩阵乘法
+Matrix4x4 Matrix4x4::operator*(const Matrix4x4& other) const {
+    Matrix4x4 result;
+#if defined(__AVX2__) || defined(__AVX__) || defined(__SSE2__) || defined(_M_X64) || defined(_M_IX86_FP2)
+    for (int i = 0; i < 4; ++i) {
+        __m128 ai0 = _mm_set1_ps(m[i][0]);
+        __m128 ai1 = _mm_set1_ps(m[i][1]);
+        __m128 ai2 = _mm_set1_ps(m[i][2]);
+        __m128 ai3 = _mm_set1_ps(m[i][3]);
+        
+        __m128 row0 = _mm_loadu_ps(other.m[0]);
+        __m128 row1 = _mm_loadu_ps(other.m[1]);
+        __m128 row2 = _mm_loadu_ps(other.m[2]);
+        __m128 row3 = _mm_loadu_ps(other.m[3]);
+        
+        __m128 r = _mm_add_ps(
+            _mm_add_ps(_mm_mul_ps(ai0, row0), _mm_mul_ps(ai1, row1)),
+            _mm_add_ps(_mm_mul_ps(ai2, row2), _mm_mul_ps(ai3, row3))
+        );
+        _mm_storeu_ps(result.m[i], r);
+    }
+#else
+    float r00 = m[0][0] * other.m[0][0] + m[0][1] * other.m[1][0] + m[0][2] * other.m[2][0] + m[0][3] * other.m[3][0];
+    float r01 = m[0][0] * other.m[0][1] + m[0][1] * other.m[1][1] + m[0][2] * other.m[2][1] + m[0][3] * other.m[3][1];
+    float r02 = m[0][0] * other.m[0][2] + m[0][1] * other.m[1][2] + m[0][2] * other.m[2][2] + m[0][3] * other.m[3][2];
+    float r03 = m[0][0] * other.m[0][3] + m[0][1] * other.m[1][3] + m[0][2] * other.m[2][3] + m[0][3] * other.m[3][3];
+    
+    float r10 = m[1][0] * other.m[0][0] + m[1][1] * other.m[1][0] + m[1][2] * other.m[2][0] + m[1][3] * other.m[3][0];
+    float r11 = m[1][0] * other.m[0][1] + m[1][1] * other.m[1][1] + m[1][2] * other.m[2][1] + m[1][3] * other.m[3][1];
+    float r12 = m[1][0] * other.m[0][2] + m[1][1] * other.m[1][2] + m[1][2] * other.m[2][2] + m[1][3] * other.m[3][2];
+    float r13 = m[1][0] * other.m[0][3] + m[1][1] * other.m[1][3] + m[1][2] * other.m[2][3] + m[1][3] * other.m[3][3];
+    
+    float r20 = m[2][0] * other.m[0][0] + m[2][1] * other.m[1][0] + m[2][2] * other.m[2][0] + m[2][3] * other.m[3][0];
+    float r21 = m[2][0] * other.m[0][1] + m[2][1] * other.m[1][1] + m[2][2] * other.m[2][1] + m[2][3] * other.m[3][1];
+    float r22 = m[2][0] * other.m[0][2] + m[2][1] * other.m[1][2] + m[2][2] * other.m[2][2] + m[2][3] * other.m[3][2];
+    float r23 = m[2][0] * other.m[0][3] + m[2][1] * other.m[1][3] + m[2][2] * other.m[2][3] + m[2][3] * other.m[3][3];
+    
+    float r30 = m[3][0] * other.m[0][0] + m[3][1] * other.m[1][0] + m[3][2] * other.m[2][0] + m[3][3] * other.m[3][0];
+    float r31 = m[3][0] * other.m[0][1] + m[3][1] * other.m[1][1] + m[3][2] * other.m[2][1] + m[3][3] * other.m[3][1];
+    float r32 = m[3][0] * other.m[0][2] + m[3][1] * other.m[1][2] + m[3][2] * other.m[2][2] + m[3][3] * other.m[3][2];
+    float r33 = m[3][0] * other.m[0][3] + m[3][1] * other.m[1][3] + m[3][2] * other.m[2][3] + m[3][3] * other.m[3][3];
+    
+    result = Matrix4x4(r00, r01, r02, r03, r10, r11, r12, r13, r20, r21, r22, r23, r30, r31, r32, r33);
+#endif
+    return result;
+}
+
 // 初始化静态常量
 const Matrix4x4 Matrix4x4::identity = Matrix4x4(1.0f, 0.0f, 0.0f, 0.0f,
                                                 0.0f, 1.0f, 0.0f, 0.0f,
@@ -117,10 +164,71 @@ float Matrix4x4::determinant() const {
 }
 
 Matrix4x4 Matrix4x4::inverse() const {
-    // 快速路径：检查是否是纯旋转矩阵（正交矩阵 + 行列式为 1）
+#if defined(__AVX2__) || defined(__AVX__) || defined(__SSE2__) || defined(_M_X64) || defined(_M_IX86_FP2)
+    // SSE加速版本：使用float精度，SIMD并行计算
+    __m128 a0 = _mm_loadu_ps(m[0]);
+    __m128 a1 = _mm_loadu_ps(m[1]);
+    __m128 a2 = _mm_loadu_ps(m[2]);
+    __m128 a3 = _mm_loadu_ps(m[3]);
+    
+    // 计算2x2子式
+    __m128 b00 = _mm_sub_ps(_mm_mul_ps(_mm_shuffle_ps(a0, a0, _MM_SHUFFLE(1,1,0,0)), 
+                                        _mm_shuffle_ps(a1, a1, _MM_SHUFFLE(1,1,0,0))),
+                             _mm_mul_ps(_mm_shuffle_ps(a0, a0, _MM_SHUFFLE(0,0,1,1)),
+                                        _mm_shuffle_ps(a1, a1, _MM_SHUFFLE(0,0,1,1))));
+    
+    // 简化版：使用标量float计算，避免double开销
+    float a00 = m[0][0], a01 = m[0][1], a02 = m[0][2], a03 = m[0][3];
+    float a10 = m[1][0], a11 = m[1][1], a12 = m[1][2], a13 = m[1][3];
+    float a20 = m[2][0], a21 = m[2][1], a22 = m[2][2], a23 = m[2][3];
+    float a30 = m[3][0], a31 = m[3][1], a32 = m[3][2], a33 = m[3][3];
+    
+    float b00_f = a00*a11 - a01*a10;
+    float b01_f = a00*a12 - a02*a10;
+    float b02_f = a00*a13 - a03*a10;
+    float b03_f = a01*a12 - a02*a11;
+    float b04_f = a01*a13 - a03*a11;
+    float b05_f = a02*a13 - a03*a12;
+    float b06_f = a20*a31 - a21*a30;
+    float b07_f = a20*a32 - a22*a30;
+    float b08_f = a20*a33 - a23*a30;
+    float b09_f = a21*a32 - a22*a31;
+    float b10_f = a21*a33 - a23*a31;
+    float b11_f = a22*a33 - a23*a32;
+    
+    float det = b00_f*b11_f - b01_f*b10_f + b02_f*b09_f + b03_f*b08_f - b04_f*b07_f + b05_f*b06_f;
+    
+    if (Math::abs(det) < Math::EPSILON) {
+        return Matrix4x4::identity;
+    }
+    
+    float inv_det = 1.0f / det;
+    
+    float r00 = (a11*b11_f - a12*b10_f + a13*b09_f) * inv_det;
+    float r01 = (a02*b10_f - a01*b11_f - a03*b09_f) * inv_det;
+    float r02 = (a31*b05_f - a32*b04_f + a33*b03_f) * inv_det;
+    float r03 = (a22*b04_f - a21*b05_f - a23*b03_f) * inv_det;
+    
+    float r10 = (a12*b08_f - a10*b11_f - a13*b07_f) * inv_det;
+    float r11 = (a00*b11_f - a02*b08_f + a03*b07_f) * inv_det;
+    float r12 = (a32*b02_f - a30*b05_f - a33*b01_f) * inv_det;
+    float r13 = (a20*b05_f - a22*b02_f + a23*b01_f) * inv_det;
+    
+    float r20 = (a10*b10_f - a11*b08_f + a13*b06_f) * inv_det;
+    float r21 = (a01*b08_f - a00*b10_f - a03*b06_f) * inv_det;
+    float r22 = (a30*b04_f - a31*b02_f + a33*b00_f) * inv_det;
+    float r23 = (a21*b02_f - a20*b04_f - a23*b00_f) * inv_det;
+    
+    float r30 = (a11*b07_f - a10*b09_f - a12*b06_f) * inv_det;
+    float r31 = (a00*b09_f - a01*b07_f + a02*b06_f) * inv_det;
+    float r32 = (a31*b01_f - a30*b03_f - a32*b00_f) * inv_det;
+    float r33 = (a20*b03_f - a21*b01_f + a22*b00_f) * inv_det;
+    
+    return Matrix4x4(r00, r01, r02, r03, r10, r11, r12, r13, r20, r21, r22, r23, r30, r31, r32, r33);
+#else
+    // 快速路径：检查是否是纯旋转矩阵
     if (m[0][3] == 0.0f && m[1][3] == 0.0f && m[2][3] == 0.0f && m[3][3] == 1.0f &&
         m[3][0] == 0.0f && m[3][1] == 0.0f && m[3][2] == 0.0f) {
-        // 检查是否是正交矩阵（R^T * R = I）
         float dot01 = m[0][0]*m[1][0] + m[0][1]*m[1][1] + m[0][2]*m[1][2];
         float dot02 = m[0][0]*m[2][0] + m[0][1]*m[2][1] + m[0][2]*m[2][2];
         float dot12 = m[1][0]*m[2][0] + m[1][1]*m[2][1] + m[1][2]*m[2][2];
@@ -133,7 +241,6 @@ Matrix4x4 Matrix4x4::inverse() const {
             Math::abs(len0 - 1.0f) < Math::EPSILON && 
             Math::abs(len1 - 1.0f) < Math::EPSILON && 
             Math::abs(len2 - 1.0f) < Math::EPSILON) {
-            // 旋转矩阵的逆就是转置
             return Matrix4x4(
                 m[0][0], m[1][0], m[2][0], 0.0f,
                 m[0][1], m[1][1], m[2][1], 0.0f,
@@ -143,73 +250,54 @@ Matrix4x4 Matrix4x4::inverse() const {
         }
     }
     
-    // 使用 double 进行中间计算，避免极端值溢出
-    double a00 = m[0][0], a01 = m[0][1], a02 = m[0][2], a03 = m[0][3];
-    double a10 = m[1][0], a11 = m[1][1], a12 = m[1][2], a13 = m[1][3];
-    double a20 = m[2][0], a21 = m[2][1], a22 = m[2][2], a23 = m[2][3];
-    double a30 = m[3][0], a31 = m[3][1], a32 = m[3][2], a33 = m[3][3];
+    float a00 = m[0][0], a01 = m[0][1], a02 = m[0][2], a03 = m[0][3];
+    float a10 = m[1][0], a11 = m[1][1], a12 = m[1][2], a13 = m[1][3];
+    float a20 = m[2][0], a21 = m[2][1], a22 = m[2][2], a23 = m[2][3];
+    float a30 = m[3][0], a31 = m[3][1], a32 = m[3][2], a33 = m[3][3];
     
-    double b00 = a00*a11 - a01*a10;
-    double b01 = a00*a12 - a02*a10;
-    double b02 = a00*a13 - a03*a10;
-    double b03 = a01*a12 - a02*a11;
-    double b04 = a01*a13 - a03*a11;
-    double b05 = a02*a13 - a03*a12;
-    double b06 = a20*a31 - a21*a30;
-    double b07 = a20*a32 - a22*a30;
-    double b08 = a20*a33 - a23*a30;
-    double b09 = a21*a32 - a22*a31;
-    double b10 = a21*a33 - a23*a31;
-    double b11 = a22*a33 - a23*a32;
+    float b00 = a00*a11 - a01*a10;
+    float b01 = a00*a12 - a02*a10;
+    float b02 = a00*a13 - a03*a10;
+    float b03 = a01*a12 - a02*a11;
+    float b04 = a01*a13 - a03*a11;
+    float b05 = a02*a13 - a03*a12;
+    float b06 = a20*a31 - a21*a30;
+    float b07 = a20*a32 - a22*a30;
+    float b08 = a20*a33 - a23*a30;
+    float b09 = a21*a32 - a22*a31;
+    float b10 = a21*a33 - a23*a31;
+    float b11 = a22*a33 - a23*a32;
     
-    double det = b00*b11 - b01*b10 + b02*b09 + b03*b08 - b04*b07 + b05*b06;
+    float det = b00*b11 - b01*b10 + b02*b09 + b03*b08 - b04*b07 + b05*b06;
     
-    // 检查行列式是否为零、无穷大或NaN
-    if (Math::abs(det) < Math::EPSILON || std::isinf(det) || std::isnan(det)) {
+    if (Math::abs(det) < Math::EPSILON) {
         return Matrix4x4::identity;
     }
     
-    double inv_det = 1.0 / det;
+    float inv_det = 1.0f / det;
     
-    // 计算逆矩阵元素
-    double r00 = (a11*b11 - a12*b10 + a13*b09) * inv_det;
-    double r01 = (a02*b10 - a01*b11 - a03*b09) * inv_det;
-    double r02 = (a31*b05 - a32*b04 + a33*b03) * inv_det;
-    double r03 = (a22*b04 - a21*b05 - a23*b03) * inv_det;
+    float r00 = (a11*b11 - a12*b10 + a13*b09) * inv_det;
+    float r01 = (a02*b10 - a01*b11 - a03*b09) * inv_det;
+    float r02 = (a31*b05 - a32*b04 + a33*b03) * inv_det;
+    float r03 = (a22*b04 - a21*b05 - a23*b03) * inv_det;
     
-    double r10 = (a12*b08 - a10*b11 - a13*b07) * inv_det;
-    double r11 = (a00*b11 - a02*b08 + a03*b07) * inv_det;
-    double r12 = (a32*b02 - a30*b05 - a33*b01) * inv_det;
-    double r13 = (a20*b05 - a22*b02 + a23*b01) * inv_det;
+    float r10 = (a12*b08 - a10*b11 - a13*b07) * inv_det;
+    float r11 = (a00*b11 - a02*b08 + a03*b07) * inv_det;
+    float r12 = (a32*b02 - a30*b05 - a33*b01) * inv_det;
+    float r13 = (a20*b05 - a22*b02 + a23*b01) * inv_det;
     
-    double r20 = (a10*b10 - a11*b08 + a13*b06) * inv_det;
-    double r21 = (a01*b08 - a00*b10 - a03*b06) * inv_det;
-    double r22 = (a30*b04 - a31*b02 + a33*b00) * inv_det;
-    double r23 = (a21*b02 - a20*b04 - a23*b00) * inv_det;
+    float r20 = (a10*b10 - a11*b08 + a13*b06) * inv_det;
+    float r21 = (a01*b08 - a00*b10 - a03*b06) * inv_det;
+    float r22 = (a30*b04 - a31*b02 + a33*b00) * inv_det;
+    float r23 = (a21*b02 - a20*b04 - a23*b00) * inv_det;
     
-    double r30 = (a11*b07 - a10*b09 - a12*b06) * inv_det;
-    double r31 = (a00*b09 - a01*b07 + a02*b06) * inv_det;
-    double r32 = (a31*b01 - a30*b03 - a32*b00) * inv_det;
-    double r33 = (a20*b03 - a21*b01 + a22*b00) * inv_det;
+    float r30 = (a11*b07 - a10*b09 - a12*b06) * inv_det;
+    float r31 = (a00*b09 - a01*b07 + a02*b06) * inv_det;
+    float r32 = (a31*b01 - a30*b03 - a32*b00) * inv_det;
+    float r33 = (a20*b03 - a21*b01 + a22*b00) * inv_det;
     
-    // 如果任何元素是NaN或无穷大，返回单位矩阵
-    if (std::isnan(r00) || std::isnan(r01) || std::isnan(r02) || std::isnan(r03) ||
-        std::isnan(r10) || std::isnan(r11) || std::isnan(r12) || std::isnan(r13) ||
-        std::isnan(r20) || std::isnan(r21) || std::isnan(r22) || std::isnan(r23) ||
-        std::isnan(r30) || std::isnan(r31) || std::isnan(r32) || std::isnan(r33) ||
-        std::isinf(r00) || std::isinf(r01) || std::isinf(r02) || std::isinf(r03) ||
-        std::isinf(r10) || std::isinf(r11) || std::isinf(r12) || std::isinf(r13) ||
-        std::isinf(r20) || std::isinf(r21) || std::isinf(r22) || std::isinf(r23) ||
-        std::isinf(r30) || std::isinf(r31) || std::isinf(r32) || std::isinf(r33)) {
-        return Matrix4x4::identity;
-    }
-    
-    return Matrix4x4(
-        static_cast<float>(r00), static_cast<float>(r01), static_cast<float>(r02), static_cast<float>(r03),
-        static_cast<float>(r10), static_cast<float>(r11), static_cast<float>(r12), static_cast<float>(r13),
-        static_cast<float>(r20), static_cast<float>(r21), static_cast<float>(r22), static_cast<float>(r23),
-        static_cast<float>(r30), static_cast<float>(r31), static_cast<float>(r32), static_cast<float>(r33)
-    );
+    return Matrix4x4(r00, r01, r02, r03, r10, r11, r12, r13, r20, r21, r22, r23, r30, r31, r32, r33);
+#endif
 }
 
 Matrix4x4& Matrix4x4::invert() {

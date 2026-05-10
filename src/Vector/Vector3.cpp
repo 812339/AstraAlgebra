@@ -137,10 +137,10 @@ bool Vector3::isApproximatelyEqual(const Vector3& other, float epsilon) const {
 
 // 向量归一化
 Vector3& Vector3::normalize() {
-    float len = length();
-    if (len > Math::EPSILON) {
-        float invLen = 1.0f / len;
-        *this *= invLen;
+    float lenSq = x * x + y * y + z * z;
+    if (lenSq > Math::EPSILON * Math::EPSILON) {
+        float invLen = Math::fastInvSqrt(lenSq);
+        x *= invLen; y *= invLen; z *= invLen;
     }
     return *this;
 }

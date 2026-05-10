@@ -69,15 +69,16 @@ public:
         return Quaternion(x * inv, y * inv, z * inv, w * inv);
     }
     // 四元数旋转向量，游戏里经常用
+    // 使用 t = 2 * cross(q.xyz, v) 公式，比旋转矩阵法少一半运算
     constexpr Vector3 operator*(const Vector3& vector) const {
-        float xx = x * x, yy = y * y, zz = z * z;
-        float xy = x * y, xz = x * z, yz = y * z;
-        float wx = w * x, wy = w * y, wz = w * z;
+        float t1 = 2.0f * (y * vector.z - z * vector.y);
+        float t2 = 2.0f * (z * vector.x - x * vector.z);
+        float t3 = 2.0f * (x * vector.y - y * vector.x);
         
         return Vector3(
-            (1 - 2 * (yy + zz)) * vector.x + (2 * (xy - wz)) * vector.y + (2 * (xz + wy)) * vector.z,
-            (2 * (xy + wz)) * vector.x + (1 - 2 * (xx + zz)) * vector.y + (2 * (yz - wx)) * vector.z,
-            (2 * (xz - wy)) * vector.x + (2 * (yz + wx)) * vector.y + (1 - 2 * (xx + yy)) * vector.z
+            vector.x + w * t1 + (y * t3 - z * t2),
+            vector.y + w * t2 + (z * t1 - x * t3),
+            vector.z + w * t3 + (x * t2 - y * t1)
         );
     }
 

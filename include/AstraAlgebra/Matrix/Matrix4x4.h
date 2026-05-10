@@ -63,29 +63,8 @@ public:
         );
     }
     // 矩阵乘法，使用局部变量减少内存访问
-    [[nodiscard]] constexpr Matrix4x4 operator*(const Matrix4x4& other) const {
-        float r00 = m[0][0] * other.m[0][0] + m[0][1] * other.m[1][0] + m[0][2] * other.m[2][0] + m[0][3] * other.m[3][0];
-        float r01 = m[0][0] * other.m[0][1] + m[0][1] * other.m[1][1] + m[0][2] * other.m[2][1] + m[0][3] * other.m[3][1];
-        float r02 = m[0][0] * other.m[0][2] + m[0][1] * other.m[1][2] + m[0][2] * other.m[2][2] + m[0][3] * other.m[3][2];
-        float r03 = m[0][0] * other.m[0][3] + m[0][1] * other.m[1][3] + m[0][2] * other.m[2][3] + m[0][3] * other.m[3][3];
-        
-        float r10 = m[1][0] * other.m[0][0] + m[1][1] * other.m[1][0] + m[1][2] * other.m[2][0] + m[1][3] * other.m[3][0];
-        float r11 = m[1][0] * other.m[0][1] + m[1][1] * other.m[1][1] + m[1][2] * other.m[2][1] + m[1][3] * other.m[3][1];
-        float r12 = m[1][0] * other.m[0][2] + m[1][1] * other.m[1][2] + m[1][2] * other.m[2][2] + m[1][3] * other.m[3][2];
-        float r13 = m[1][0] * other.m[0][3] + m[1][1] * other.m[1][3] + m[1][2] * other.m[2][3] + m[1][3] * other.m[3][3];
-        
-        float r20 = m[2][0] * other.m[0][0] + m[2][1] * other.m[1][0] + m[2][2] * other.m[2][0] + m[2][3] * other.m[3][0];
-        float r21 = m[2][0] * other.m[0][1] + m[2][1] * other.m[1][1] + m[2][2] * other.m[2][1] + m[2][3] * other.m[3][1];
-        float r22 = m[2][0] * other.m[0][2] + m[2][1] * other.m[1][2] + m[2][2] * other.m[2][2] + m[2][3] * other.m[3][2];
-        float r23 = m[2][0] * other.m[0][3] + m[2][1] * other.m[1][3] + m[2][2] * other.m[2][3] + m[2][3] * other.m[3][3];
-        
-        float r30 = m[3][0] * other.m[0][0] + m[3][1] * other.m[1][0] + m[3][2] * other.m[2][0] + m[3][3] * other.m[3][0];
-        float r31 = m[3][0] * other.m[0][1] + m[3][1] * other.m[1][1] + m[3][2] * other.m[2][1] + m[3][3] * other.m[3][1];
-        float r32 = m[3][0] * other.m[0][2] + m[3][1] * other.m[1][2] + m[3][2] * other.m[2][2] + m[3][3] * other.m[3][2];
-        float r33 = m[3][0] * other.m[0][3] + m[3][1] * other.m[1][3] + m[3][2] * other.m[2][3] + m[3][3] * other.m[3][3];
-        
-        return Matrix4x4(r00, r01, r02, r03, r10, r11, r12, r13, r20, r21, r22, r23, r30, r31, r32, r33);
-    }
+    // 当启用SIMD时使用SSE加速
+    [[nodiscard]] Matrix4x4 operator*(const Matrix4x4& other) const;
     [[nodiscard]] constexpr Matrix4x4 operator*(float scalar) const {
         return Matrix4x4(
             m[0][0]*scalar, m[0][1]*scalar, m[0][2]*scalar, m[0][3]*scalar,
@@ -168,7 +147,7 @@ public:
                Math::abs(m[3][0])<Math::EPSILON && Math::abs(m[3][1])<Math::EPSILON && Math::abs(m[3][2])<Math::EPSILON && Math::abs(m[3][3]-1.0f)<Math::EPSILON;
     }
     // 正交矩阵
-    [[nodiscard]] constexpr bool isOrthogonal() const {
+    [[nodiscard]] bool isOrthogonal() const {
         Matrix4x4 t = transposed();
         Matrix4x4 product = *this * t;
         return product.isIdentity();
