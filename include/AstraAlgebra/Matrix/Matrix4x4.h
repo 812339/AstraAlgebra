@@ -244,14 +244,26 @@ public:
     // 透视投影
     static inline Matrix4x4 perspective(float fov, float aspectRatio, float nearPlane, float farPlane) {
         float fovRad = fov * Math::DEG_TO_RAD;
-        float f = 1.0f / tanf(fovRad * 0.5f);
+        float f = 1.0f / std::tan(fovRad * 0.5f);
         float nf = 1.0f / (nearPlane - farPlane);
-        return Matrix4x4(
-            f / aspectRatio, 0.0f, 0.0f, 0.0f,
-            0.0f, f, 0.0f, 0.0f,
-            0.0f, 0.0f, (farPlane + nearPlane) * nf, 2.0f * farPlane * nearPlane * nf,
-            0.0f, 0.0f, -1.0f, 0.0f
-        );
+        Matrix4x4 result;
+        result.m[0][0] = f / aspectRatio;
+        result.m[0][1] = 0.0f;
+        result.m[0][2] = 0.0f;
+        result.m[0][3] = 0.0f;
+        result.m[1][0] = 0.0f;
+        result.m[1][1] = f;
+        result.m[1][2] = 0.0f;
+        result.m[1][3] = 0.0f;
+        result.m[2][0] = 0.0f;
+        result.m[2][1] = 0.0f;
+        result.m[2][2] = (farPlane + nearPlane) * nf;
+        result.m[2][3] = 2.0f * farPlane * nearPlane * nf;
+        result.m[3][0] = 0.0f;
+        result.m[3][1] = 0.0f;
+        result.m[3][2] = -1.0f;
+        result.m[3][3] = 0.0f;
+        return result;
     }
     // 正交投影
     static Matrix4x4 orthographic(float left, float right, float bottom, float top, float nearPlane, float farPlane);
